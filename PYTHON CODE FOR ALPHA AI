@@ -1,0 +1,131 @@
+import pyttsx3  # pip install pyttsx3
+import speech_recognition as sr  # pip install speechRecognition
+import datetime
+import wikipedia  # pip install wikipedia
+import webbrowser
+import os
+import smtplib
+
+engine = pyttsx3.init('sapi5')
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[0].id)
+
+
+def speak(audio):
+    engine.say(audio)
+    engine.runAndWait()
+
+
+def wish_me():
+    hour = datetime.datetime.now().hour
+    if 0 <= hour < 12:
+        speak("Good Morning!")
+    elif 12 <= hour < 18:
+        speak("Good Afternoon!")
+    else:
+        speak("Good Evening!")
+
+    speak("I am ALPHA Sir. Please tell me how may I help you")
+
+
+def take_command():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening...")
+        r.pause_threshold = 1
+        audio = r.listen(source)
+
+    try:
+        print("Recognizing...")
+        recognized_query = r.recognize_google(audio, language='en-in')
+        print(f"User said: {recognized_query}\n")
+        return recognized_query.lower()
+
+    except sr.UnknownValueError:
+        print("Could not understand the audio.")
+        return "None"
+
+    except sr.RequestError as e:
+        print(f"Error making the request to Google Speech Recognition service; {e}")
+        return "None"
+
+
+def send_email(email_to, content):
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.ehlo()
+        server.starttls()
+        server.login('aryankothambia@gmail.com', 'aryankothambia2002')
+        server.sendmail('your_email@gmail.com', email_to, content)
+        server.close()
+        print("Email has been sent!")
+        speak("Email has been sent!")
+
+    except smtplib.SMTPAuthenticationError as auth_error:
+        print(f"Authentication error: {auth_error}")
+        speak("Authentication error. Please check your email credentials.")
+    except smtplib.SMTPConnectError as connect_error:
+        print(f"Connection error: {connect_error}")
+        speak("Unable to connect to the SMTP server.")
+    except Exception as email_exception:
+        print(f"Error sending email: {email_exception}")
+        speak("Sorry Aryan Sir. I am not able to send this email")
+
+
+if __name__ == "__main__":
+    wish_me()
+    while True:
+        user_query = take_command()
+
+        # Logic for executing tasks based on query
+        if 'wikipedia' in user_query:
+            speak('Searching Wikipedia...')
+            user_query = user_query.replace("wikipedia", "")
+            try:
+                results = wikipedia.summary(user_query, sentences=2)
+                speak("According to Wikipedia")
+                print(results)
+                speak(results)
+            except wikipedia.exceptions.DisambiguationError as disambiguation_error:
+                print(f"DisambiguationError: {disambiguation_error}")
+                speak("I found multiple results. Please be more specific.")
+            except wikipedia.exceptions.PageError as page_error:
+                print(f"PageError: {page_error}")
+                speak("I could not find any results. Please try again.")
+
+        elif 'open youtube' in user_query:
+            webbrowser.open("https://www.youtube.com")
+
+        elif 'open google' in user_query:
+            webbrowser.open("https://www.google.com")
+
+        elif 'open stackoverflow' in user_query:
+            webbrowser.open("https://stackoverflow.com")
+
+        elif 'play music' in user_query:
+            music_dir = r'D:\Music'
+            songs = os.listdir(music_dir)
+            print(songs)
+            if songs:
+                os.startfile(os.path.join(music_dir, songs[0]))
+            else:
+                speak("No music files found in the specified directory.")
+
+        elif 'the time' in user_query:
+            str_time = datetime.datetime.now().strftime("%H:%M:%S")
+            speak(f"Sir, the time is {str_time}")
+
+        elif 'open code' in user_query:
+            code_path = r"C:\Users\aryan\PycharmProjects\ALPHAFINAL\main.py"
+            os.startfile(code_path)
+
+        elif 'email to Aryan' in user_query:
+            try:
+                speak("What should I say?")
+                email_content = take_command()
+                to = "aryankothambia@gmail.com"
+                send_email(to, email_content)
+            except Exception as email_exception:
+                print(f"Unexpected error: {email_exception}")
+
+        print('PyCharm')  # This line will be part of the continuous loop
